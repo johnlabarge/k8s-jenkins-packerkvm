@@ -173,18 +173,6 @@ Set "Restrict where this project can be run":
 set to jenkins-qemu
 
 
-Prepare the Image for Upload
-----------------------------
-
-The resulting image is usually larger than it needs to be. It can be compressed using the `qemu-img` command.
-
-For example, start by changing into the output directory for the particular image built by `packer`:
-
-    cd output-centos-7-x86_64-1611-ext4
-
-Then, compress the image:
-
-    qemu-img convert -c centos-7-x86_64-1611-ext4 -O qcow2 centos-7-x86_64-1611-ext4.qcow2
 
 References
 ----------
