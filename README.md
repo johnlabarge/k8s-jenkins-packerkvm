@@ -15,12 +15,11 @@ The tutorial walks you through the steps of setting up each component
 
 Provision a GKE cluster 
 ------------------------
-###Login to your GCP, set the project of choice, open cloud shell:
+### Login to your GCP, set the project of choice, open cloud shell:
 
-    gcloud container clusters create jenkins-cd   --network default --machine-type n1-standard-2 --num-nodes 2   --scopes "http
-s://www.googleapis.com/auth/projecthosting,storage-rw,cloud-platform"  --zone=us-central1-b
+    gcloud container clusters create jenkins-cd   --network default --machine-type n1-standard-2 --num-nodes 2   --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw,cloud-platform"  --zone=us-central1-b
 
-###Install helm
+### Install helm
 Download and install helm:
     wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
     tar zxfv helm-v2.9.1-linux-amd64.tar.gz
@@ -46,7 +45,7 @@ References:
 [1]https://cloud.google.com/solutions/jenkins-on-kubernetes-engine-tutorial
 
 
-###Jenkins
+### Jenkins
 Install:
     ./helm install -n cd stable/jenkins -f jenkins/values.yaml --version 0.16.6 --wait
 
