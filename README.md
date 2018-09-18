@@ -17,53 +17,98 @@ Provision a GKE cluster
 ------------------------
 ### Login to your GCP, set the project of choice, open cloud shell:
 
-    gcloud container clusters create jenkins-cd   --network default --machine-type n1-standard-2 --num-nodes 2   --scopes "https://www.googleapis.com/auth/projecthosting,storage-rw,cloud-platform"  --zone=us-central1-b
+### Create the GKE cluster 
+```sh 
+VERSION=$(gcloud container get-server-config --zone us-central1-c --format='value(validMasterVersions[0])')
+gcloud container clusters create dev --zone=us-central1-c \
+--cluster-version=${VERSION} \
+--machine-type n1-standard-2 \
+--num-nodes 2 \
+--scopes='https://www.googleapis.com/auth/projecthosting,storage-rw,cloud-platform'
+```
 
 ### Install helm
-Download and install helm:
-    wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
-    tar zxfv helm-v2.9.1-linux-amd64.tar.gz
-    cp linux-amd64/helm .
+1. Download and install helm:
+```sh 
+wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
+tar zxfv helm-v2.9.1-linux-amd64.tar.gz
+cp linux-amd64/helm .
+```
+1. Add yourself as the cluster admin:
+```sh
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin \
+--user=$(gcloud config get-value account)
+```
 
-Add yourself as the cluster admin:
-    kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin \
-        --user=$(gcloud config get-value account)
-
-Grant tiller the servide of the helm HELM the cluster-admin:
+1. Grant tiller the servide of the helm HELM the cluster-admin:
+```sh
     kubectl create serviceaccount tiller --namespace kube-system
     kubectl create clusterrolebinding tiller-admin-binding --clusterrole=cluster-admin \
                --serviceaccount=kube-system:tiller
-               
-Initialize helm:
-    ./helm init --service-account=tiller
-    ./helm update
+```               
 
-Ensure helm is properly installed:
-    ./helm version
+1. Initialize helm:
+```sh
+./helm init --service-account=tiller
+./helm update
+```
 
-References:
-[1]https://cloud.google.com/solutions/jenkins-on-kubernetes-engine-tutorial
+1. Ensure helm is properly installed:
+```sh
+./helm version
+```
+
 
 
 ### Jenkins
-Install:
-    ./helm install -n cd stable/jenkins -f jenkins/values.yaml --version 0.16.6 --wait
 
-Admin password:
+1. Create Jenkins Configuraiton
+```sh
+cat <<CONFIG >values.yaml
+Master:
+  InstallPlugins:
+    - kubernetes:1.7.1
+    - workflow-aggregator:2.5
+    - workflow-job:2.21
+    - credentials-binding:1.16
+    - git:3.9.1
+    - google-oauth-plugin:0.6
+    - google-source-plugin:0.3
+    - jclouds-jenkins:2.14
+  Cpu: "1"
+  Memory: "3500Mi"
+  JavaOpts: "-Xms3500m -Xmx3500m"
+  ServiceType: ClusterIP
+Agent:
+  Enabled: false
+Persistence:
+  Size: 100Gi
+NetworkPolicy:
+  ApiVersion: networking.k8s.io/v1
+rbac:
+  install: true
+  serviceAccountName: cd-jenkins
+CONFIG
+```
+1. Install Jenkins
+```sh
+    ./helm install -n cd stable/jenkins -f values.yaml --version 0.16.6 --wait
+```
+1. Get the Admin password.
+```sh 
     printf $(kubectl get secret --namespace default cd-jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode);echo
-
-Get the Jenkins URL to visit by running these commands in the same shell:
-  export POD_NAME=$(kubectl get pods --namespace default -l "component=cd-jenkins-master" -o jsonpath="{.items[0].metadata.name}")
+```
+1. Get the Jenkins URL to visit by running these commands in the same shell:
+```sh
+export POD_NAME=$(kubectl get pods --namespace default -l "component=cd-jenkins-master" -o jsonpath="{.items[0].metadata.name}")
   echo http://127.0.0.1:8080
   kubectl port-forward $POD_NAME 8080:8080
+```
 
-Install plugins: 
+1. Install plugins: 
 On the jenkins site-> Manage - > 
 Check for intalled plugins. Ensure you have compute engine/storage bucket plugins
 
-
-References:
-[1]https://cloud.google.com/solutions/jenkins-on-container-engine
 
 ### Building jenkins agent image
 The jenkins agent image needs to have 
