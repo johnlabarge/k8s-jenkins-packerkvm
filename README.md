@@ -17,6 +17,9 @@ Provision a GKE cluster
 ------------------------
 ### Login to your GCP, set the project of choice, open cloud shell:
 
+[![button](http://gstatic.com/cloudssh/images/open-btn.png)](https://console.cloud.google.com/cloudshell/open?git_repo=https://github.com/johnlabarge/k8s-jenkins-packerkvm&page=editor&tutorial=README.md)
+
+
 ### Task 1: Create the GKE cluster 
 ```sh 
 VERSION=$(gcloud container get-server-config --zone us-central1-c --format='value(validMasterVersions[0])')
