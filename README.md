@@ -189,12 +189,12 @@ cat > jenkins-agent.json <<EOF
     {
       "type": "googlecompute",
       "project_id": "$PROJECT",
-      "source_image": "nested-vzn-image"
+      "source_image": "nested-vzn-image",
       "zone": "us-central1-a",
       "disk_size": "10",
       "image_name": "jenkins-agent-{{timestamp}}",
       "image_family": "jenkins-agent",
-      "ssh_username": "ubuntu"
+      "ssh_username": "ubuntu",
       "startup_script_file": "agent_install.sh" 
     }
   ],
