@@ -192,7 +192,7 @@ cat > jenkins-agent.json <<EOF
       "source_image": "nested-vzn-image",
       "zone": "us-central1-a",
       "disk_size": "10",
-      "image_name": "jenkins-agent-{{timestamp}}",
+      "image_name": "jenkins-agent",
       "image_family": "jenkins-agent",
       "ssh_username": "agent",
       "startup_script_file": "agent_install_script.sh" 
@@ -220,7 +220,38 @@ Login to the jenkins using the admin user and password.
 1. Select the jenkins-sa.json file that you previously downloaded from Cloud Shell.
 1. Click **OK**.
 
-Google credentials
+#### Configure the Google Compute Engine Plugin
+Configure the Google Compute Engine plugin
+Configure the Google Compute Engine plugin with the credentials it uses to provision your agent instances.
+
+In the leftmost menu of the Jenkins UI, select Manage Jenkins.
+Click Configure System.
+Scroll to the bottom of the page and click Add a new Cloud.
+Click Google Compute Engine.
+Set the following settings:
+
+Name: gce
+Project ID: [YOUR PROJECT ID]
+Instance Cap: 8
+Choose the service account from the Service Account Credentials dropdown. It is listed as your project ID.
+
+Configure Jenkins instance configurations
+Now that the Google Compute Engine plugin is configured, you can configure Jenkins instance configurations for the various build configurations you'd like.
+
+Under the Google Compute Engine configuration in the Configure System page, click Add.
+Enter the following settings:
+
+Name: ubuntu-1604
+Description: Ubuntu agent
+Labels: ubuntu-1604
+Region: us-central1
+Zone: us-central1-f Machine Type: n1-standard-1
+In the Networking settings, select the default Network and Subnetwork.
+
+Check the External IP? box.
+In the Boot Disk settings, select your project from the Image project dropdown.
+Selct the image you built earlier using Packer.
+Click Save at the bottom of the page to persist your configuration changes.
 
 Click Jenkins in the top-left corner of the interface.
 
