@@ -97,11 +97,15 @@ CONFIG
 ```sh
     ./helm install -n cd stable/jenkins -f values.yaml --version 0.16.6 --wait
 ```
-1. Get the Admin password.
+2. Get the Admin password.
 ```sh 
     printf $(kubectl get secret --namespace default cd-jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode);echo
 ```
-1. Get the Jenkins URL to visit by running these commands in the same shell:
+3. Wait for jenkins pod to come up
+```sh
+kubectl get pods --watch 
+```
+4. Get the Jenkins URL to visit by running these commands in the same shell:
 ```sh
 export POD_NAME=$(kubectl get pods --namespace default -l "component=cd-jenkins-master" -o jsonpath="{.items[0].metadata.name}")
   echo http://127.0.0.1:8080
@@ -151,9 +155,10 @@ gcloud projects add-iam-policy-binding $PROJECT --role roles/iam.serviceAccountA
 ```sh 
 gcloud iam service-accounts keys create jenkins-sa.json --iam-account $SA_EMAIL
 ```
+1. Copy the result of the command ``echo "$(pwd)/jenkins-sa.json"`` to the clipboard
 1. In cloud shell click the More button  ![more button](jenkins-ce-cloud-shell-more.png)
-1. Click **Download** file
-1. Type ``jenkins-sa.json``
+1. Click **Download file**
+1. Paste the copied contents into the text box. 
 1. Click **Download** to save the file locally.
 
 ### Nested Virtualization Image
@@ -168,6 +173,7 @@ Start with with a standard centos-7 image (us-central1-b has the default mincpu 
         --source-disk disk1 \
         --source-disk-zone us-central1-b \
         --licenses "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx"
+```        
 ### Create the Jenkins Agent 
 1. Download and unpack Packer 
 ```sh
@@ -204,7 +210,7 @@ EOF
 ```
 
 
-###Jenkins configuration
+### Jenkins configuration
 TODO WIP
 1. Goto **Jenkins->configuration->**
 1. Scroll down to the end of the page and **"Add a Google Compute Engine"**
