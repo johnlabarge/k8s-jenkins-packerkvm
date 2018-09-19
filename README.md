@@ -206,8 +206,25 @@ EOF
 ./packer build jenkins-agent.json
 ``` 
 
-### Jenkins configuration
-TODO WIP
+### Task : Configure Jenkins 
+Login to the jenkins using the admin user and password. 
+
+#### Configure Credentials 
+1. In the left-hand menu, click **Credentials**.
+1. In the left-hand menu, click **System**.
+1. In the main pane of the UI, click **Global credentials (unrestricted)**.
+1. In the left-hand menu, click **Add Credentials**.
+1. Set Kind to **Google Service Account from private key**.
+1. In the **Project Name** field, enter your project ID.
+1. Click **Choose file**.
+1. Select the jenkins-sa.json file that you previously downloaded from Cloud Shell.
+1. Click **OK**.
+
+Google credentials
+
+Click Jenkins in the top-left corner of the interface.
+
+
 1. Goto **Jenkins->configuration->**
 1. Scroll down to the end of the page and **"Add a Google Compute Engine"**
 1. Give it a good name and set the project id appropriately, set the service account credentials that allows GCE api calls.
