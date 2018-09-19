@@ -189,7 +189,7 @@ cat > jenkins-agent.json <<EOF
     {
       "type": "googlecompute",
       "project_id": "$PROJECT",
-      "source_image_family": "nested-vzn-image"
+      "source_image": "nested-vzn-image"
       "zone": "us-central1-a",
       "disk_size": "10",
       "image_name": "jenkins-agent-{{timestamp}}",
