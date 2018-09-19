@@ -194,15 +194,8 @@ cat > jenkins-agent.json <<EOF
       "disk_size": "10",
       "image_name": "jenkins-agent-{{timestamp}}",
       "image_family": "jenkins-agent",
-      "ssh_username": "ubuntu",
-      "startup_script_file": "agent_install.sh" 
-    }
-  ],
-  "provisioners": [
-    {
-      "type": "shell",
-      "inline": ["sudo apt-get update",
-                  "sudo apt-get install -y default-jdk"]
+      "ssh_username": "agent",
+      "startup_script_file": "agent_install_script.sh" 
     }
   ]
 }
