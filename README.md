@@ -78,6 +78,7 @@ Master:
     - google-compute-engine:1.0.4 
     - google-storage-plugin:1.2
     - jclouds-jenkins:2.14
+    - packer:1.5
   Cpu: "1"
   Memory: "3500Mi"
   JavaOpts: "-Xms3500m -Xmx3500m"
@@ -164,15 +165,15 @@ gcloud iam service-accounts keys create jenkins-sa.json --iam-account $SA_EMAIL
 ### Nested Virtualization Image
 Start with with a standard centos-7 image (us-central1-b has the default mincpu platform to be haswell, hence this example uses haswell since that min platform is required to turn nested virt on) 
 ```sh
-    gcloud compute disks create disk1 \
-        --image-project centos-cloud \
-        --image-family centos-7 \
-        --zone us-central1-b
+gcloud compute disks create disk1 \
+--image-project centos-cloud \
+--image-family centos-7 \
+--zone us-central1-b
 
-    gcloud compute images create nested-vzn-image \
-        --source-disk disk1 \
-        --source-disk-zone us-central1-b \
-        --licenses "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx"
+gcloud compute images create nested-vzn-image \
+--source-disk disk1 \
+--source-disk-zone us-central1-b \
+--licenses "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx"
 ```        
 ### Create the Jenkins Agent 
 1. Download and unpack Packer 
@@ -205,48 +206,33 @@ Login to the jenkins using the admin user and password.
 1. Click **OK**.
 
 #### Configure the Google Compute Engine Plugin
-Configure the Google Compute Engine plugin
 Configure the Google Compute Engine plugin with the credentials it uses to provision your agent instances.
 
-In the leftmost menu of the Jenkins UI, select Manage Jenkins.
-Click Configure System.
-Scroll to the bottom of the page and click Add a new Cloud.
-Click Google Compute Engine.
-Set the following settings:
-
+1. In the leftmost menu of the Jenkins UI, select **Manage Jenkins**.
+1. Click **Configure System**.
+1. Scroll to the bottom of the page and click **Add a new Cloud**.
+1. Click **Google Compute Engine**.
+1. Set the following settings:
 Name: gce
 Project ID: [YOUR PROJECT ID]
 Instance Cap: 8
 Choose the service account from the Service Account Credentials dropdown. It is listed as your project ID.
 
-Configure Jenkins instance configurations
+#### Configure Jenkins instance configurations
 Now that the Google Compute Engine plugin is configured, you can configure Jenkins instance configurations for the various build configurations you'd like.
-
-Under the Google Compute Engine configuration in the Configure System page, click Add.
-Enter the following settings:
-
-Name: ubuntu-1604
-Description: Ubuntu agent
-Labels: ubuntu-1604
-Region: us-central1
-Zone: us-central1-f Machine Type: n1-standard-1
-In the Networking settings, select the default Network and Subnetwork.
-
-Check the External IP? box.
-In the Boot Disk settings, select your project from the Image project dropdown.
-Selct the image you built earlier using Packer.
-Click Save at the bottom of the page to persist your configuration changes.
-
-Click Jenkins in the top-left corner of the interface.
-
-
-1. Goto **Jenkins->configuration->**
-1. Scroll down to the end of the page and **"Add a Google Compute Engine"**
-1. Give it a good name and set the project id appropriately, set the service account credentials that allows GCE api calls.
-I set a label called "jenkins-qemu" to ensure jobs needing nested virt land on the instances backed by this configuration. 
-Set the zone to us-central1-b since the minCpuPlatform is "Haswell"
-Check "External IP" for networking.
-Set the Bootdisk image to be the image nested-centos-jenkins.
+1. Under **Google Compute Engine configuration** in the **Configure System** page, click Add.
+1. Enter the following settings:
+    Name: jenkins-agent
+    Description: Jenkins Agent
+    Labels: jenkins-agent
+    Region: us-central1
+    Zone: us-central1-f 
+    Machine Type: n1-standard-1
+1. In the Networking settings, select the default Network and Subnetwork.
+    Check the **External IP?** box.
+1. In the Boot Disk settings, select your project from the Image project dropdown.
+1. Select the image you built earlier using Packer.
+1. Click Save at the bottom of the page to persist your configuration changes.
 
 ###Create a Jenkins Job:
 
@@ -265,10 +251,3 @@ Set "Restrict where this project can be run":
 set to jenkins-qemu
 
 
-
-References
-----------
-
-* [packer-openstack-centos-image](https://github.com/jkhelil/packer-openstack-centos-image)
-* [Packer Image Builder for RHEL Family (RedHat, CentOS, Oracle Linux)](https://github.com/TelekomLabs/packer-rhel)
-* [Enabling nested virtualization on an instance](https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances#enablenestedvirt)
