@@ -43,14 +43,14 @@ kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-ad
 --user=$(gcloud config get-value account)
 ```
 
-1. Grant tiller the servide of the helm HELM the cluster-admin:
+2. Grant tiller the service of the helm HELM the cluster-admin:
 ```sh
     kubectl create serviceaccount tiller --namespace kube-system
     kubectl create clusterrolebinding tiller-admin-binding --clusterrole=cluster-admin \
                --serviceaccount=kube-system:tiller
 ```               
 
-1. Initialize helm:
+3. Initialize helm:
 ```sh
 ./helm init --service-account=tiller
 ./helm update
