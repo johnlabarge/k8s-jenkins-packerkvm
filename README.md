@@ -75,9 +75,9 @@ Master:
     - git:3.9.1
     - google-oauth-plugin:0.6
     - google-source-plugin:0.3
-    - google-compute-engine: 1.0.4 
-    - google-storage-plugin: 1.2
-    - jclouds-jenkins: 2.14
+    - google-compute-engine:1.0.4 
+    - google-storage-plugin:1.2
+    - jclouds-jenkins:2.14
   Cpu: "1"
   Memory: "3500Mi"
   JavaOpts: "-Xms3500m -Xmx3500m"
