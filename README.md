@@ -17,7 +17,7 @@ Provision a GKE cluster
 ------------------------
 ### Login to your GCP, set the project of choice, open cloud shell:
 
-### Create the GKE cluster 
+### Task 1: Create the GKE cluster 
 ```sh 
 VERSION=$(gcloud container get-server-config --zone us-central1-c --format='value(validMasterVersions[0])')
 gcloud container clusters create dev --zone=us-central1-c \
@@ -27,7 +27,7 @@ gcloud container clusters create dev --zone=us-central1-c \
 --scopes='https://www.googleapis.com/auth/projecthosting,storage-rw,cloud-platform'
 ```
 
-### Install helm
+### Task 2: Install helm
 1. Download and install helm:
 ```sh 
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
@@ -58,9 +58,7 @@ kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-ad
 ./helm version
 ```
 
-
-
-### Jenkins
+### Task 3: Install Jenkins
 
 1. Create Jenkins Configuraiton
 ```sh
@@ -74,7 +72,9 @@ Master:
     - git:3.9.1
     - google-oauth-plugin:0.6
     - google-source-plugin:0.3
-    - jclouds-jenkins:2.14
+    - google-compute-engine: 1.0.4 
+    - google-storage-plugin: 1.2
+    - jclouds-jenkins: 2.14
   Cpu: "1"
   Memory: "3500Mi"
   JavaOpts: "-Xms3500m -Xmx3500m"
@@ -117,84 +117,95 @@ The jenkins agent image needs to have
 * qemu-kvm
 * jenkins agent
 
-Start with with a standard centos-7 image (us-central1-b has the default mincpu platform to be haswell, hence this example uses haswell since that min platform is required to turn nested virt on) 
+### Service Account Creation 
+1. Create the service account
+```sh 
+gcloud iam service-accounts create jenkins --display-name jenkins
+```
 
+1. Store the service account email
+```sh
+export SA_EMAIL=$(gcloud iam service-accounts list \
+    --filter="displayName:jenkins" --format='value(email)')
+export PROJECT=$(gcloud info --format='value(config.project)')
+```
+
+1. Add iam roles to service account
+```sh 
+gcloud projects add-iam-policy-binding $PROJECT \
+    --role roles/storage.admin --member serviceAccount:$SA_EMAIL
+gcloud projects add-iam-policy-binding $PROJECT --role roles/compute.instanceAdmin.v1 \
+    --member serviceAccount:$SA_EMAIL
+gcloud projects add-iam-policy-binding $PROJECT --role roles/compute.networkAdmin \
+    --member serviceAccount:$SA_EMAIL
+gcloud projects add-iam-policy-binding $PROJECT --role roles/compute.securityAdmin \
+    --member serviceAccount:$SA_EMAIL
+gcloud projects add-iam-policy-binding $PROJECT --role roles/iam.serviceAccountActor \
+    --member serviceAccount:$SA_EMAIL
+```
+
+1. Create the service account key
+```sh 
+gcloud iam service-accounts keys create jenkins-sa.json --iam-account $SA_EMAIL
+```
+1. In cloud shell click the More button  ![more button](jenkins-ce-cloud-shell-more.png)
+1. Click **Download** file
+1. Type ``jenkins-sa.json``
+1. Click **Download** to save the file locally.
+
+### Nested Virtualization Image
+Start with with a standard centos-7 image (us-central1-b has the default mincpu platform to be haswell, hence this example uses haswell since that min platform is required to turn nested virt on) 
+```sh
     gcloud compute disks create disk1 \
         --image-project centos-cloud \
         --image-family centos-7 \
         --zone us-central1-b
 
-    gcloud compute images create nested-vm-image \
+    gcloud compute images create nested-vzn-image \
         --source-disk disk1 \
         --source-disk-zone us-central1-b \
         --licenses "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx"
+### Create the Jenkins Agent 
+1. Download and unpack Packer 
+```sh
+wget https://releases.hashicorp.com/packer/0.12.3/packer_0.12.3_linux_amd64.zip
+unzip packer_0.12.3_linux_amd64.zip
+```
+1. Create the agent configuration using packer 
+```sh
+export PROJECT=$(gcloud info --format='value(config.project)')
+cat > jenkins-agent.json <<EOF
+{
+  "builders": [
+    {
+      "type": "googlecompute",
+      "project_id": "$PROJECT",
+      "source_image_family": "nested-vzn-image"
+      "zone": "us-central1-a",
+      "disk_size": "10",
+      "image_name": "jenkins-agent-{{timestamp}}",
+      "image_family": "jenkins-agent",
+      "ssh_username": "ubuntu"
+      "startup_script_file": "agent_install.sh" 
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": ["sudo apt-get update",
+                  "sudo apt-get install -y default-jdk"]
+    }
+  ]
+}
+EOF
+```
 
-Create the GCE VM:
-
-    gcloud compute instances create packer-build-host \
-        --zone us-central1-b \
-        --machine-type=n1-standard-4 \
-        --boot-disk-size=20GB \
-        --boot-disk-type=pd-ssd \
-        --image nested-vm-image
-
-
-SSH to the GCE VM:
-
-    gcloud compute ssh packer-build-host --zone=us-central1-b
-
-
-Install packages required 
-   
-Install QEMU/KVM:
-
-    sudo -i
-
-    yum install qemu-kvm unzip git
-
-Packer needs __qemu-kvm__ available in the BASH path. For some reason it isn't added. Add it:
-
-    echo 'export PATH=$PATH:/usr/libexec' > /etc/profile.d/libexec-path.sh
-
-    source /etc/profile.d/libexec-path.sh
-
-Also, add __/usr/local/bin__ to your BASH path:
-
-    echo 'export PATH=$PATH:/usr/local/bin' > /etc/profile.d/usr-local-bin-path.sh
-
-    source /etc/profile.d/usr-local-bin-path.sh
-
-Download the [latest version of Packer](https://www.packer.io/downloads.html):
-
-    curl -O https://releases.hashicorp.com/packer/1.3.0/packer_1.3.0_linux_amd64.zip
-
-Unzip __packer__:
-
-    unzip packer_1.3.0_linux_amd64.zip
-
-There's already a program named __packer__ in the BASH path. Do not remove this program as it is part of the __cracklib-dicts__ package which many other programs depend on. Instead, rename the __packer__ program you just downloaded to __packerio__:
-
-    mv packer /usr/local/bin/packerio
-
-
-Install Java libraries for Jenkins agent:
-
-    sudo yum install java-1.8.0-openjdk-devel -y
-    sudo yum install java-1.7.0-openjdk -y
-
-Build the image:
-    sudo shutdown -h now
-
-Create an image from the disk from the VM just shutdown above nested-centos-jenkins
-
-This image will be used for further Jenkins setup
 
 ###Jenkins configuration
-
-Configuration:
-Goto Jenkins->configuration->:
-Scroll down to the end of the page and "Add a Google Compute Engine"
-Give it a good name and set the project id appropriately, set the service account credentials that allows GCE api calls.
+TODO WIP
+1. Goto **Jenkins->configuration->**
+1. Scroll down to the end of the page and **"Add a Google Compute Engine"**
+1. Give it a good name and set the project id appropriately, set the service account credentials that allows GCE api calls.
 I set a label called "jenkins-qemu" to ensure jobs needing nested virt land on the instances backed by this configuration. 
 Set the zone to us-central1-b since the minCpuPlatform is "Haswell"
 Check "External IP" for networking.
