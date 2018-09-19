@@ -183,25 +183,7 @@ unzip packer_0.12.3_linux_amd64.zip
 1. Create the agent configuration using packer 
 ```sh
 export PROJECT=$(gcloud info --format='value(config.project)')
-export IMAGE_NAME='jenkins-agent-{{timestamp}}'
-
-cat > jenkins-agent.json <<EOF
-{
-  "builders": [
-    {
-      "type": "googlecompute",
-      "project_id": "$PROJECT",
-      "source_image": "nested-vzn-image",
-      "zone": "us-central1-a",
-      "disk_size": "10",
-      "image_name": "$IMAGE_NAME",
-      "image_family": "jenkins-agent",
-      "ssh_username": "agent",
-      "startup_script_file": "agent_install_script.sh" 
-    }
-  ]
-}
-EOF
+ sed -i "s/PROJECT/$PROJECT/" jenkins-agent.json
 ```
 2. Build the agent image using packer
 ```sh
