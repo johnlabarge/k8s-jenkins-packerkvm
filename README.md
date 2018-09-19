@@ -208,7 +208,10 @@ cat > jenkins-agent.json <<EOF
 }
 EOF
 ```
-
+2. Build the agent image using packer
+```sh
+./packer build jenkins-agent.json
+``` 
 
 ### Jenkins configuration
 TODO WIP
